@@ -1,7 +1,7 @@
 #![feature(decl_macro)]
 
-#[macro_use] extern crate serde;
 #[macro_use] extern crate rocket;
+use rocket::{serde::{Serialize, Deserialize, json::Json}, response::status};
 
 #[derive(Serialize, Deserialize)]
 enum Room {
@@ -9,7 +9,7 @@ enum Room {
     Entry,
     LivingRoom,
     Kitchen,
-    Garage
+    Garage,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -68,7 +68,7 @@ enum Category {
     Sochu,
 }
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize)]
 enum SubCategory {
     American,
     SingleMalt,
@@ -113,16 +113,16 @@ enum SubCategory {
 struct Location {
     room: Room,
     storage: Storage,
-    shelf: Shelf
+    shelf: Shelf,
 }
 
 #[derive(Serialize, Deserialize)]
 struct Bottle {
-    id: i32,
+    id: u16,
     name: String,
     category: Category,
     sub_category: Vec<SubCategory>,
-    location: Location
+    location: Location,
 }
 
 #[get("/")]
@@ -131,13 +131,13 @@ fn index() -> &'static str {
 }
 
 #[get("/random")]
-fn get_random_bottle() -> rocket::serde::json::Json<Bottle>  {
-    rocket::serde::json::Json(
+fn get_random_bottle() -> Json<Bottle>  {
+    Json(
         Bottle {
             id: 1,
             name: "Faretti Biscotti Famosi".to_string(),
             category: Category::Liqueurs,
-            sub_category: [SubCategory::Sweet].to_vec(),
+            sub_category: vec![SubCategory::Sweet],
             location: Location {
                 room: Room::LivingRoom,
                 storage: Storage::LeftIkea,
@@ -147,11 +147,63 @@ fn get_random_bottle() -> rocket::serde::json::Json<Bottle>  {
     )
 }
 
+#[post("/", data = "<bottle>")]
+fn create_bottle(bottle: Json<Bottle>) -> Json<Bottle> {
+    bottle
+}
+
+#[get("/")]
+fn get_bottles() -> Json<Vec<Bottle>>  {
+    Json(vec![
+        Bottle {
+            id: 1,
+            name: "Faretti Biscotti Famosi".to_string(),
+            category: Category::Liqueurs,
+            sub_category: vec![SubCategory::Sweet],
+            location: Location {
+                room: Room::LivingRoom,
+                storage: Storage::LeftIkea,
+                shelf: Shelf::Shelf5
+            }
+        },
+        Bottle {
+            id: 2,
+            name: "Hibiki 12".to_string(),
+            category: Category::Whiskey,
+            sub_category: vec![
+                SubCategory::Japanese,
+                SubCategory::Blend,
+                ],
+            location: Location {
+                room: Room::DiningRoom,
+                storage: Storage::Buffet,
+                shelf: Shelf::CenterBottom
+            }
+        },
+    ])
+}
+
+#[delete("/<id>")]
+fn delete_bottle(id: u16) -> status::NoContent { 
+    status::NoContent
+}
+
+#[put("/<id>", data = "<bottle>")]
+fn update_bottle(id: u16, bottle: Json<Bottle>) -> Json<Bottle> {
+    bottle
+}
+
 #[launch]
 fn rocket() -> _ {
     let rocket= rocket::build();
     
     rocket
       .mount("/", routes![index])
-      .mount("/bottles", routes![get_random_bottle])
+      .mount("/bottles", routes![
+        get_random_bottle,
+        create_bottle,
+        get_bottles,
+        delete_bottle,
+        update_bottle
+        ])
 }
