@@ -1,0 +1,10 @@
+version: '3.1'
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ethel
+      POSTGRES_PASSWORD: ethel
+    ports:
+      - "5432:5432"

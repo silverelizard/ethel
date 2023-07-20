@@ -110,19 +110,14 @@ enum SubCategory {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Location {
-    room: Room,
-    storage: Storage,
-    shelf: Shelf,
-}
-
-#[derive(Serialize, Deserialize)]
 struct Bottle {
     id: u16,
     name: String,
     category: Category,
     sub_category: Vec<SubCategory>,
-    location: Location,
+    room: Room,
+    storage: Storage,
+    shelf: Shelf,
 }
 
 #[get("/")]
@@ -138,11 +133,9 @@ fn get_random_bottle() -> Json<Bottle>  {
             name: "Faretti Biscotti Famosi".to_string(),
             category: Category::Liqueurs,
             sub_category: vec![SubCategory::Sweet],
-            location: Location {
-                room: Room::LivingRoom,
-                storage: Storage::LeftIkea,
-                shelf: Shelf::Shelf5
-            }
+            room: Room::LivingRoom,
+            storage: Storage::LeftIkea,
+            shelf: Shelf::Shelf5
         }
     )
 }
@@ -160,11 +153,9 @@ fn get_bottles() -> Json<Vec<Bottle>>  {
             name: "Faretti Biscotti Famosi".to_string(),
             category: Category::Liqueurs,
             sub_category: vec![SubCategory::Sweet],
-            location: Location {
-                room: Room::LivingRoom,
-                storage: Storage::LeftIkea,
-                shelf: Shelf::Shelf5
-            }
+            room: Room::LivingRoom,
+            storage: Storage::LeftIkea,
+            shelf: Shelf::Shelf5
         },
         Bottle {
             id: 2,
@@ -174,11 +165,9 @@ fn get_bottles() -> Json<Vec<Bottle>>  {
                 SubCategory::Japanese,
                 SubCategory::Blend,
                 ],
-            location: Location {
-                room: Room::DiningRoom,
-                storage: Storage::Buffet,
-                shelf: Shelf::CenterBottom
-            }
+            room: Room::DiningRoom,
+            storage: Storage::Buffet,
+            shelf: Shelf::CenterBottom
         },
     ])
 }
