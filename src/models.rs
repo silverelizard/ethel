@@ -1,10 +1,17 @@
-use serde::{Deserialize, Serialize};
+use rocket::serde::{Deserialize, Serialize};
 use crate::schema::{storage, categories, sub_categories, bottles};
 
-#[derive(Serialize, Deserialize, Queryable, Debug, Insertable)]
-#[diesel(table_name = storage)]
+#[derive(Serialize, Queryable, Debug)]
 pub struct Storage {
     pub id: i16,
+    pub name: String,
+    pub room: String,
+    pub shelf: String,
+}
+
+#[derive(Deserialize, Insertable, AsChangeset, Debug)]
+#[diesel(table_name = storage)]
+pub struct NewStorage {
     pub name: String,
     pub room: String,
     pub shelf: String,

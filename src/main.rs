@@ -1,14 +1,12 @@
 #![feature(decl_macro)]
 
 #[macro_use] extern crate rocket;
-use rocket::Config;
-use rocket::fairing::AdHoc;
-use rocket_sync_db_pools::database;
-
 #[macro_use] extern crate diesel;
 
-#[database("my_db")]
-pub struct Db(diesel::PgConnection);
+use rocket::Config;
+use rocket::fairing::AdHoc;
+use ethel::Db;
+
 pub mod schema;
 pub mod models;
 pub mod routes;
@@ -29,7 +27,7 @@ fn rocket() -> _ {
             routes::bottles::update_bottle
             ])
         .mount("/storage", routes![
-            // routes::storage::create_storage,
+            routes::storage::create_storage,
             routes::storage::get_storage,
             routes::storage::delete_storage,
             routes::storage::update_storage
