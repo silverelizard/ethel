@@ -1,5 +1,4 @@
 use rocket::{serde::json::Json, response::status};
-
 use crate::models::Bottle;
 
 #[get("/random")]
