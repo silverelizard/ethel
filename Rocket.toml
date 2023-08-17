@@ -1,0 +1,2 @@
+[default.databases.my_db]
+url = "postgres://ethel:ethel@localhost:5432/etheldb"
