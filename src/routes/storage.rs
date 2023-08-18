@@ -6,7 +6,7 @@ use crate::Db;
 use ethel::ApiError;
 
 #[post("/", data = "<storage>")]
-pub async fn create_storage(
+pub async fn create(
     connection: Db,
     storage: Json<NewStorage>
 ) -> Result<status::Created<Json<Storage> > , Json<ApiError>> {
@@ -26,7 +26,7 @@ pub async fn create_storage(
 }
 
 #[get("/")]
-pub async fn get_storage(connection: Db) -> Json<Vec<Storage>>  {
+pub async fn get(connection: Db) -> Json<Vec<Storage>>  {
     connection
         .run(|c| storage::table.load(c))
         .await
@@ -35,12 +35,33 @@ pub async fn get_storage(connection: Db) -> Json<Vec<Storage>>  {
 }
 
 #[delete("/<id>")]
-pub fn delete_storage(id: u16) -> status::NoContent { 
-    status::NoContent
+pub async fn delete(
+    connection: Db,
+    id: i16
+) -> Result<status::NoContent, status::NotFound<Json<ApiError>>> { 
+    
+    connection
+        .run(move |c| {
+            let affected = diesel::delete(storage::table.filter(storage::id.eq(id)))
+                .execute(c)
+                .expect("Connection is broken");
+            match affected {
+                1 => Ok(()),
+                0 => Err("NotFound"),
+                _ => Err("???"),
+            }
+        })
+        .await
+        .map(|_| status::NoContent)
+        .map_err(|e| {
+            status::NotFound(Json(ApiError {
+                details: e.to_string(),
+            }))
+        })
 }
 
 #[put("/<id>", data = "<storage>")]
-pub async fn update_storage(
+pub async fn update(
     connection: Db,
     id: i16,
     storage: Json<NewStorage>,

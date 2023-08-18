@@ -27,10 +27,10 @@ fn rocket() -> _ {
             routes::bottles::update_bottle
             ])
         .mount("/storage", routes![
-            routes::storage::create_storage,
-            routes::storage::get_storage,
-            routes::storage::delete_storage,
-            routes::storage::update_storage
+            routes::storage::create,
+            routes::storage::get,
+            routes::storage::delete,
+            routes::storage::update
         ])
         .mount("/categories", routes![
             routes::categories::create_category,
