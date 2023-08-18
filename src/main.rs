@@ -39,9 +39,9 @@ fn rocket() -> _ {
             routes::categories::update
         ])
         .mount("/sub_categories", routes![
-            routes::sub_categories::create_sub_category,
-            routes::sub_categories::get_sub_categories,
-            routes::sub_categories::delete_sub_category,
-            routes::sub_categories::update_sub_category
+            routes::sub_categories::create,
+            routes::sub_categories::get,
+            routes::sub_categories::delete,
+            routes::sub_categories::update
         ])
 }

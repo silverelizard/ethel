@@ -1,4 +1,4 @@
-use diesel::{self, prelude::*, connection};
+use diesel::{self, prelude::*};
 use rocket::{serde::json::Json, response::status};
 use crate::models::{NewBottle, Bottle};
 use crate::schema::bottles;

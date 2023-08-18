@@ -17,10 +17,15 @@ pub struct NewStorage {
     pub shelf: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, Debug, Insertable, Identifiable)]
-#[diesel(table_name = categories)]
+#[derive(Serialize, Queryable, Debug)]
 pub struct Category {
     pub id: i16,
+    pub name: String,
+}
+
+#[derive(Deserialize, Insertable, AsChangeset, Debug)]
+#[diesel(table_name = categories)]
+pub struct NewCategory {
     pub name: String,
 }
 
