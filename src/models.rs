@@ -29,11 +29,17 @@ pub struct NewCategory {
     pub name: String,
 }
 
-#[derive(Serialize, Deserialize, Queryable, Debug, Insertable, Identifiable, Associations)]
-#[diesel(belongs_to(Category))]
-#[diesel(table_name = sub_categories)]
+#[derive(Serialize, Queryable, Debug)]
 pub struct SubCategory {
     pub id: i16,
+    pub category_id: i16,
+    pub name: String,
+}
+
+#[derive(Deserialize, Insertable, AsChangeset, Debug, Associations)]
+#[diesel(belongs_to(Category))]
+#[diesel(table_name = sub_categories)]
+pub struct NewSubCategory {
     pub category_id: i16,
     pub name: String,
 }
