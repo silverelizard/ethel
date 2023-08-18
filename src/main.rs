@@ -20,11 +20,11 @@ fn rocket() -> _ {
         .attach(Db::fairing())
         .mount("/", routes![routes::index])
         .mount("/bottles", routes![
-            routes::bottles::get_random_bottle,
-            routes::bottles::create_bottle,
-            routes::bottles::get_bottles,
-            routes::bottles::delete_bottle,
-            routes::bottles::update_bottle
+            // routes::bottles::get_random_bottle,
+            routes::bottles::create,
+            routes::bottles::get,
+            routes::bottles::delete,
+            routes::bottles::update
             ])
         .mount("/storage", routes![
             routes::storage::create,
@@ -33,10 +33,10 @@ fn rocket() -> _ {
             routes::storage::update
         ])
         .mount("/categories", routes![
-            routes::categories::create_category,
-            routes::categories::get_categories,
-            routes::categories::delete_category,
-            routes::categories::update_category
+            routes::categories::create,
+            routes::categories::get,
+            routes::categories::delete,
+            routes::categories::update
         ])
         .mount("/sub_categories", routes![
             routes::sub_categories::create_sub_category,

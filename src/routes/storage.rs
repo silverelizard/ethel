@@ -65,7 +65,7 @@ pub async fn update(
     connection: Db,
     id: i16,
     storage: Json<NewStorage>,
-) -> Result<Json<Storage>, status::NotFound<Json<ApiError> > > {
+) -> Result<Json<Storage>, status::NotFound<Json<ApiError>>> {
     connection
         .run(move |c| {
             let to_update = storage::table.find(id);

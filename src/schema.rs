@@ -4,9 +4,9 @@ diesel::table! {
     bottles (id) {
         id -> Int2,
         name -> Varchar,
-        category_id -> Nullable<Int2>,
+        category_id -> Int2,
         sub_category_ids -> Nullable<Array<Nullable<Int2>>>,
-        storage_id -> Nullable<Int2>,
+        storage_id -> Int2,
     }
 }
 
@@ -29,7 +29,7 @@ diesel::table! {
 diesel::table! {
     sub_categories (id) {
         id -> Int2,
-        category_id -> Nullable<Int2>,
+        category_id -> Int2,
         name -> Varchar,
     }
 }
