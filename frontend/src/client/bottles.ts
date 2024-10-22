@@ -39,7 +39,7 @@ const testBottleData: Bottle[] = [
         id: 3,
         name: 'Bottle 3',
         category_id: 2,
-        sub_category_ids: [1,5],
+        sub_category_ids: [5],
         storage_id: 1
     }
 ];

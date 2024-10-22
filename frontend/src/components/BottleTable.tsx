@@ -1,12 +1,18 @@
 import { TableContainer, Table, TableCaption, Thead, Tr, Th, Tbody, Tfoot } from "@chakra-ui/react";
 import BottleRow from "./BottleRow";
 import { Bottle } from "../client/bottles";
+import { Category } from "../client/categories";
+import { SubCategory } from "../client/subCategories";
+import { Storage } from "../client/storage";
 
 interface BottleTableProps {
     bottles: Bottle[];
+    categories: { [id: number] : Category; };
+    subCategories: { [id: number] : SubCategory; };
+    storage: { [id: number] : Storage; };
 }
 function BottleTable(props: BottleTableProps) {
-    const bottles = props.bottles;
+    const { bottles, categories, subCategories, storage } = props;
     return (
         <div>
           <TableContainer>
@@ -21,7 +27,12 @@ function BottleTable(props: BottleTableProps) {
                 </Tr>
               </Thead>
               <Tbody>
-                { bottles.map((bottle) => <BottleRow bottle={bottle} />)}
+                { bottles.map((bottle) => 
+                  <BottleRow key={bottle.id} bottle={bottle} 
+                    category={categories[bottle.category_id]}
+                    subCategories={bottle.sub_category_ids.map((sub => subCategories[sub]))}
+                    storage={storage[bottle.storage_id]} />
+                )}
               </Tbody>
               <Tfoot>
                 <Tr>

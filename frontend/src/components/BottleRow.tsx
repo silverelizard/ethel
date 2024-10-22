@@ -1,14 +1,17 @@
 import { Td, Tr } from "@chakra-ui/react";
 import { Bottle } from "../client/bottles";
+import { Category } from "../client/categories";
+import { SubCategory } from "../client/subCategories";
+import { Storage } from "../client/storage";
 
-function BottleRow(props: { bottle: Bottle }) {
-    const bottle = props.bottle;
+function BottleRow(props: { bottle: Bottle, category: Category, subCategories: SubCategory[], storage: Storage }) {
+    const {bottle, category, subCategories, storage } = props;
     return (
-      <Tr key={bottle.id}>
+      <Tr>
         <Td>{bottle.name}</Td>
-        <Td>{bottle.category_id}</Td>
-        <Td>{bottle.sub_category_ids.join(', ')}</Td>
-        <Td>{bottle.storage_id}</Td>
+        <Td>{category.name}</Td>
+        <Td>{subCategories.map((sub) => sub.name).join(', ')}</Td>
+        <Td>{storage.room} - {storage.name} - {storage.shelf}</Td>
       </Tr>
     );
 }
