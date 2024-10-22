@@ -5,6 +5,7 @@ import BottleTable from './components/BottleTable';
 import { Category, getCategories } from './client/categories';
 import { getSubCategories, SubCategory } from './client/subCategories';
 import { getStorage, Storage } from './client/storage';
+import { SimpleGrid } from '@chakra-ui/react';
 
 function App() {
   const [categories, setCategories] = useState<{ [id: number] : Category; }>({});
@@ -29,7 +30,9 @@ function App() {
   }, []);
 
   return (
-    <BottleTable bottles={bottles} categories={categories} subCategories={subCategories} storage={storage} />
+    <SimpleGrid columns={1} spacing={10}>
+      <BottleTable bottles={bottles} categories={categories} subCategories={subCategories} storage={storage} />
+    </SimpleGrid>
   );
 
 }

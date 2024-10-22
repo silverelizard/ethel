@@ -1,9 +1,11 @@
-import { TableContainer, Table, TableCaption, Thead, Tr, Th, Tbody, Tfoot } from "@chakra-ui/react";
+import { TableContainer, Table, TableCaption, Thead, Tr, Th, Tbody, Tfoot, IconButton } from "@chakra-ui/react";
 import BottleRow from "./BottleRow";
 import { Bottle } from "../client/bottles";
 import { Category } from "../client/categories";
 import { SubCategory } from "../client/subCategories";
 import { Storage } from "../client/storage";
+import { AddIcon } from "@chakra-ui/icons";
+import ControlRow from "./ControlRow";
 
 interface BottleTableProps {
     bottles: Bottle[];
@@ -19,12 +21,7 @@ function BottleTable(props: BottleTableProps) {
             <Table variant='striped'>
               <TableCaption>Bottle List</TableCaption>
               <Thead>
-                <Tr>
-                  <Th>Name</Th>
-                  <Th>Category</Th>
-                  <Th>Sub Categories</Th>
-                  <Th>Storage</Th>
-                </Tr>
+                <ControlRow />
               </Thead>
               <Tbody>
                 { bottles.map((bottle) => 
@@ -35,12 +32,7 @@ function BottleTable(props: BottleTableProps) {
                 )}
               </Tbody>
               <Tfoot>
-                <Tr>
-                  <Th>Name</Th>
-                  <Th>Category</Th>
-                  <Th>Sub Categories</Th>
-                  <Th>Storage</Th>
-                </Tr>
+                <ControlRow />
               </Tfoot>
             </Table>
           </TableContainer>

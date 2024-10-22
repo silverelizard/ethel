@@ -8,11 +8,12 @@ import {
   theme as chakraTheme,
 } from '@chakra-ui/react';
 
-const { Table } = chakraTheme.components
+const { Table, Button, } = chakraTheme.components;
 
 const theme = extendBaseTheme({
   components: {
     Table,
+    Button,
   },
 });
 
