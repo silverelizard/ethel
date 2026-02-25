@@ -1,37 +1,24 @@
-import { useState, useEffect } from 'react';
-import { Bottle, getBottles } from './client/bottles';
-import './App.css';
-import BottleTable from './components/BottleTable';
-import { Category, getCategories } from './client/categories';
-import { getSubCategories, SubCategory } from './client/subCategories';
-import { getStorage, Storage } from './client/storage';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import AppShell from '@/components/layout/AppShell'
+import BottlesPage from '@/components/bottles/BottlesPage'
+import CategoriesPage from '@/components/categories/CategoriesPage'
+import SubCategoriesPage from '@/components/subCategories/SubCategoriesPage'
+import StoragePage from '@/components/storage/StoragePage'
 
 function App() {
-  const [categories, setCategories] = useState<{ [id: number] : Category; }>({});
-  const [subCategories, setSubCategories] = useState<{ [id: number] : SubCategory; }>({});
-  const [storage, setStorage] = useState<{ [id: number] : Storage; }>({});
-  const [bottles, setBottles] = useState<Bottle[]>([]);
-
-  useEffect(() => {
-    getCategories().then(categories => setCategories(categories));
-  }, []);
-
-  useEffect(() => {
-    getSubCategories().then(subCategories => setSubCategories(subCategories));
-  }, []);
-
-  useEffect(() => {
-    getStorage().then(storage => setStorage(storage));
-  }, []);
-
-  useEffect(() => {
-    getBottles().then(bottles => setBottles(bottles));
-  }, []);
-
   return (
-    <BottleTable bottles={bottles} categories={categories} subCategories={subCategories} storage={storage} />
-  );
-
+    <BrowserRouter>
+      <AppShell>
+        <Routes>
+          <Route path="/" element={<Navigate to="/bottles" replace />} />
+          <Route path="/bottles" element={<BottlesPage />} />
+          <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/sub-categories" element={<SubCategoriesPage />} />
+          <Route path="/storage" element={<StoragePage />} />
+        </Routes>
+      </AppShell>
+    </BrowserRouter>
+  )
 }
 
-export default App;
+export default App
