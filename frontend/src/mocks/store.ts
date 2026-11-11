@@ -13,26 +13,28 @@ export function delay(ms = 200): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-export class MockStore<T extends { id: number }, P> {
-  private items: T[]
+type WithId<P> = P & { id: number }
+
+export class MockStore<P> {
+  private items: WithId<P>[]
   private nextId: number
 
-  constructor(seed: T[]) {
+  constructor(seed: WithId<P>[]) {
     this.items = [...seed]
     this.nextId = Math.max(0, ...seed.map(item => item.id)) + 1
   }
 
-  list(): T[] {
+  list(): WithId<P>[] {
     return this.items.map(item => ({ ...item }))
   }
 
-  create(payload: P): T {
-    const item = { ...payload, id: this.nextId++ } as T
+  create(payload: P): WithId<P> {
+    const item = { ...payload, id: this.nextId++ }
     this.items.push(item)
     return { ...item }
   }
 
-  update(id: number, payload: P): T {
+  update(id: number, payload: P): WithId<P> {
     const index = this.items.findIndex(item => item.id === id)
     if (index === -1) throw new Error(`Item with id ${id} not found`)
     const item = { ...this.items[index], ...payload }
@@ -116,7 +118,7 @@ const seedBottles: Bottle[] = [
 // Exported store instances
 // ---------------------------------------------------------------------------
 
-export const categoryStore = new MockStore<Category, CategoryPayload>(seedCategories)
-export const subCategoryStore = new MockStore<SubCategory, SubCategoryPayload>(seedSubCategories)
-export const storageStore = new MockStore<Storage, StoragePayload>(seedStorage)
-export const bottleStore = new MockStore<Bottle, BottlePayload>(seedBottles)
+export const categoryStore = new MockStore<CategoryPayload>(seedCategories)
+export const subCategoryStore = new MockStore<SubCategoryPayload>(seedSubCategories)
+export const storageStore = new MockStore<StoragePayload>(seedStorage)
+export const bottleStore = new MockStore<BottlePayload>(seedBottles)
