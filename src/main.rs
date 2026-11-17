@@ -5,7 +5,8 @@
 
 use std::path::{PathBuf, Path};
 
-use rocket::Config;
+use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
+use rocket::{Build, Config, Rocket};
 use rocket::fs::{FileServer, relative, NamedFile};
 use rocket::fairing::AdHoc;
 use ethel::Db;
@@ -26,13 +27,35 @@ async fn files(file: PathBuf) -> Option<NamedFile> {
 }
 
 
+const MIGRATIONS: EmbeddedMigrations = embed_migrations!("migrations");
+
+async fn run_migrations(rocket: Rocket<Build>) -> Rocket<Build> {
+    let conn = Db::get_one(&rocket)
+        .await
+        .expect("database connection for migrations");
+    conn.run(|c| {
+        c.run_pending_migrations(MIGRATIONS)
+            .expect("failed to run database migrations");
+    })
+    .await;
+    rocket
+}
+
 #[launch]
 fn rocket() -> _ {
-    let rocket= rocket::build();
-    
-    rocket
+    // Load .env in development; a no-op when absent, and never overrides
+    // variables already set in the environment (e.g. by docker compose).
+    dotenvy::dotenv().ok();
+
+    let mut figment = Config::figment();
+    if let Ok(url) = std::env::var("DATABASE_URL") {
+        figment = figment.merge(("databases.my_db.url", url));
+    }
+
+    rocket::custom(figment)
         .attach(AdHoc::config::<Config>())
         .attach(Db::fairing())
+        .attach(AdHoc::on_ignite("Run migrations", run_migrations))
         // .mount("/", routes![routes::index])
         .mount("/", FileServer::from(relative!("/build")).rank(1))
         .mount("/static", routes![files,])

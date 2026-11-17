@@ -3,21 +3,27 @@ services:
     image: postgres:16
     restart: unless-stopped
     environment:
-      POSTGRES_USER: ethel
-      POSTGRES_PASSWORD: ethel
-      POSTGRES_DB: etheldb
+      POSTGRES_USER: ${POSTGRES_USER:-ethel}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}
+      POSTGRES_DB: ${POSTGRES_DB:-etheldb}
     volumes:
       - db-data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    # No published ports: the app reaches the db over the compose network.
+    # For host access during development, use docker-compose.dev.yml.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   app:
     build: .
     restart: unless-stopped
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      ROCKET_DATABASES: '{my_db={url="postgres://ethel:ethel@db:5432/etheldb"}}'
+      DATABASE_URL: postgres://${POSTGRES_USER:-ethel}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}@db:5432/${POSTGRES_DB:-etheldb}
     ports:
       - "8000:8000"
 

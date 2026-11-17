@@ -21,9 +21,20 @@ This project was written in a Unix environment, specifically on a MacOS (most re
 ### Setting up the Backend of the Project
 1. In the root of the project, run `cargo build`
 2. Install the Diesel CLI tools to manage our DB setup and migrations (we are using Postgres) `cargo install diesel_cli --no-default-features --features postgres`
-3. Start your DB: `docker-compose up` (this will download the needed image and run the DB server locally)
-4. Create a `.env` (of it doesn't already exist) with your DB credentials: `DATABASE_URL=postgres://ethel:ethel@localhost:5432/etheldb` (this is the projet default)
-4. Setup your DB using the Diesel CLI: `diesel setup`
+3. Create your `.env` from the template and set a password (use the same password in `POSTGRES_PASSWORD` and `DATABASE_URL`): `cp .env.example .env`
+4. Start your DB with Postgres published on localhost only: `docker compose -f docker-compose.yml -f docker-compose.dev.yml up -d db`
+5. Setup your DB using the Diesel CLI: `diesel setup` (optional: the app also runs pending migrations on startup)
+
+### Configuration
+- `DATABASE_URL` is read by both the Diesel CLI and the app (from `.env` in development). Never put credentials in `Rocket.toml`.
+- `docker compose` reads `POSTGRES_USER`, `POSTGRES_PASSWORD` and `POSTGRES_DB` from `.env` and refuses to start without `POSTGRES_PASSWORD`.
+- The plain `docker compose up` does not publish Postgres to the host at all; only `docker-compose.dev.yml` does, and only on `127.0.0.1`.
+- Changing the password: `POSTGRES_PASSWORD` only takes effect when the `db-data` volume is first created. For an existing volume, run `docker compose exec db psql -U ethel -d etheldb -c "ALTER USER ethel PASSWORD 'new-password';"` and then update `.env`.
+
+### Running with Docker
+1. `cp .env.example .env` and set a password
+2. `docker compose up --build -d`
+3. The app is on `http://localhost:8000` and applies database migrations at startup
 
 ### Setting up the Frontend of the Project
 1. In the frontend directory, run `npm install`

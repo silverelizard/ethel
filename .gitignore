@@ -36,3 +36,8 @@ frontend/.env.production.local
 frontend/npm-debug.log*
 frontend/yarn-debug.log*
 frontend/yarn-error.log*
+
+# local secrets (root only; frontend/.env is tracked and non-secret)
+/.env
+/.env.*
+!/.env.example
