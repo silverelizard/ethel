@@ -3,10 +3,11 @@ use rocket::{serde::json::Json, response::status};
 use crate::models::{NewCategory, Category};
 use crate::schema::categories;
 use crate::Db;
-use ethel::ApiError;
+use ethel::{ApiError, SameOrigin};
 
-#[post("/", data = "<category>")]
+#[post("/", format = "json", data = "<category>")]
 pub async fn create(
+    _csrf: SameOrigin,
     connection: Db,
     category: Json<NewCategory>
 ) -> Result<status::Created<Json<Category>> , Json<ApiError>> {
@@ -36,6 +37,7 @@ pub async fn get(connection: Db) -> Json<Vec<Category>>  {
 
 #[delete("/<id>")]
 pub async fn delete(
+    _csrf: SameOrigin,
     connection: Db,
     id: i16
 ) -> Result<status::NoContent, status::NotFound<Json<ApiError>>> { 
@@ -59,8 +61,9 @@ pub async fn delete(
         })
 }
 
-#[put("/<id>", data = "<category>")]
+#[put("/<id>", format = "json", data = "<category>")]
 pub async fn update(
+    _csrf: SameOrigin,
     connection: Db,
     id: i16,
     category: Json<NewCategory>

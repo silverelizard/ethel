@@ -3,7 +3,7 @@ use rocket::{serde::json::Json, response::status};
 use crate::models::{NewBottle, Bottle};
 use crate::schema::bottles;
 use crate::Db;
-use ethel::ApiError;
+use ethel::{ApiError, SameOrigin};
 
 // #[get("/random")]
 // pub fn get_random_bottle() -> Json<Bottle>  {
@@ -18,8 +18,9 @@ use ethel::ApiError;
 //     )
 // }
 
-#[post("/", data = "<bottle>")]
+#[post("/", format = "json", data = "<bottle>")]
 pub async fn create(
+    _csrf: SameOrigin,
     connection: Db,
     bottle: Json<NewBottle>
 ) -> Result<status::Created<Json<Bottle>> , Json<ApiError>> {
@@ -49,6 +50,7 @@ pub async fn get(connection: Db) -> Json<Vec<Bottle>>  {
 
 #[delete("/<id>")]
 pub async fn delete(
+    _csrf: SameOrigin,
     connection: Db,
     id: i16
 ) -> Result<status::NoContent, status::NotFound<Json<ApiError>>> { 
@@ -72,8 +74,9 @@ pub async fn delete(
         })
 }
 
-#[put("/<id>", data = "<bottle>")]
+#[put("/<id>", format = "json", data = "<bottle>")]
 pub async fn update(
+    _csrf: SameOrigin,
     connection: Db,
     id: i16,
     bottle: Json<NewBottle>
