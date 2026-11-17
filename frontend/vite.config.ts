@@ -13,10 +13,7 @@ export default defineConfig({
     proxy: process.env.VITE_USE_MOCKS === 'true'
       ? undefined
       : {
-          '/bottles': 'http://localhost:8000',
-          '/categories': 'http://localhost:8000',
-          '/sub_categories': 'http://localhost:8000',
-          '/storage': 'http://localhost:8000',
+          '/api': 'http://localhost:8000',
         },
   },
 })
