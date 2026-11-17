@@ -3,7 +3,7 @@ use rocket::{serde::json::Json, response::status};
 use crate::models::{NewCategory, Category};
 use crate::schema::categories;
 use crate::Db;
-use ethel::{auth::Authenticated, error::HttpError, SameOrigin};
+use ethel::{auth::Authenticated, error::HttpError, normalize_name, SameOrigin};
 
 #[post("/", format = "json", data = "<category>")]
 pub async fn create(
@@ -12,10 +12,12 @@ pub async fn create(
     connection: Db,
     category: Json<NewCategory>,
 ) -> Result<status::Created<Json<Category>>, HttpError> {
+    let mut category = category.into_inner();
+    category.name = normalize_name(&category.name)?;
     connection
         .run(move |c| {
             diesel::insert_into(categories::table)
-                .values(&category.into_inner())
+                .values(&category)
                 .get_result(c)
         })
         .await
@@ -57,10 +59,12 @@ pub async fn update(
     id: i16,
     category: Json<NewCategory>,
 ) -> Result<Json<Category>, HttpError> {
+    let mut category = category.into_inner();
+    category.name = normalize_name(&category.name)?;
     connection
         .run(move |c| {
             diesel::update(categories::table.find(id))
-                .set(&category.into_inner())
+                .set(&category)
                 .get_result(c)
         })
         .await

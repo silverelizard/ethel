@@ -1,0 +1,2 @@
+DROP INDEX sub_categories_category_name_unique;
+DROP INDEX categories_name_unique;
