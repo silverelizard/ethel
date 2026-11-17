@@ -1,2 +1,3 @@
-[default.databases.my_db]
-url = "postgres://ethel:ethel@localhost:5432/etheldb"
+# The database URL comes from the DATABASE_URL environment variable
+# (loaded from .env in development; see .env.example).
+# Do not put credentials in this file.
