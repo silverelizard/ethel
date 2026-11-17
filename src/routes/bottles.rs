@@ -3,28 +3,15 @@ use rocket::{serde::json::Json, response::status};
 use crate::models::{NewBottle, Bottle};
 use crate::schema::bottles;
 use crate::Db;
-use ethel::{auth::Authenticated, ApiError, SameOrigin};
-
-// #[get("/random")]
-// pub fn get_random_bottle() -> Json<Bottle>  {
-//     Json(
-//         Bottle {
-//             id: 1,
-//             name: "Faretti Biscotti Famosi".to_string(),
-//             category_id: 1,
-//             sub_category_ids: vec![1],
-//             storage_id: 1,
-//         }
-//     )
-// }
+use ethel::{auth::Authenticated, error::HttpError, SameOrigin};
 
 #[post("/", format = "json", data = "<bottle>")]
 pub async fn create(
     _csrf: SameOrigin,
     _auth: Authenticated,
     connection: Db,
-    bottle: Json<NewBottle>
-) -> Result<status::Created<Json<Bottle>> , Json<ApiError>> {
+    bottle: Json<NewBottle>,
+) -> Result<status::Created<Json<Bottle>>, HttpError> {
     connection
         .run(move |c| {
             diesel::insert_into(bottles::table)
@@ -32,21 +19,17 @@ pub async fn create(
                 .get_result(c)
         })
         .await
-        .map(|a| status::Created::new("/").body(Json(a)))
-        .map_err(|e| {
-            Json(ApiError {
-                details: e.to_string(),
-            })
-        })
+        .map(|row| status::Created::new("/").body(Json(row)))
+        .map_err(HttpError::db)
 }
 
 #[get("/")]
-pub async fn get(_auth: Authenticated, connection: Db) -> Json<Vec<Bottle>>  {
+pub async fn get(_auth: Authenticated, connection: Db) -> Result<Json<Vec<Bottle>>, HttpError> {
     connection
         .run(|c| bottles::table.load(c))
         .await
         .map(Json)
-        .expect("Failed to fetch bottles")
+        .map_err(HttpError::db)
 }
 
 #[delete("/<id>")]
@@ -54,26 +37,16 @@ pub async fn delete(
     _csrf: SameOrigin,
     _auth: Authenticated,
     connection: Db,
-    id: i16
-) -> Result<status::NoContent, status::NotFound<Json<ApiError>>> { 
-    connection
-        .run(move |c| {
-            let affected = diesel::delete(bottles::table.filter(bottles::id.eq(id)))
-                .execute(c)
-                .expect("Connection is broken");
-            match affected {
-                1 => Ok(()),
-                0 => Err("NotFound"),
-                _ => Err("???"),
-            }
-        })
+    id: i16,
+) -> Result<status::NoContent, HttpError> {
+    let affected = connection
+        .run(move |c| diesel::delete(bottles::table.find(id)).execute(c))
         .await
-        .map(|_| status::NoContent)
-        .map_err(|e| {
-            status::NotFound(Json(ApiError {
-                details: e.to_string(),
-            }))
-        })
+        .map_err(HttpError::db_delete)?;
+    match affected {
+        0 => Err(HttpError::not_found()),
+        _ => Ok(status::NoContent),
+    }
 }
 
 #[put("/<id>", format = "json", data = "<bottle>")]
@@ -82,20 +55,15 @@ pub async fn update(
     _auth: Authenticated,
     connection: Db,
     id: i16,
-    bottle: Json<NewBottle>
-) -> Result<Json<Bottle>, status::NotFound<Json<ApiError>>> {
+    bottle: Json<NewBottle>,
+) -> Result<Json<Bottle>, HttpError> {
     connection
         .run(move |c| {
-            let to_update = bottles::table.find(id);
-            diesel::update(to_update)
+            diesel::update(bottles::table.find(id))
                 .set(&bottle.into_inner())
                 .get_result(c)
         })
         .await
         .map(Json)
-        .map_err(|e| {
-            status::NotFound(Json(ApiError {
-                details: e.to_string(),
-            }))
-        })
+        .map_err(HttpError::db)
 }

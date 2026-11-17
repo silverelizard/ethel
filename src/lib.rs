@@ -2,6 +2,7 @@
 extern crate rocket;
 
 pub mod auth;
+pub mod error;
 
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};

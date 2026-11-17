@@ -10,6 +10,7 @@ use rocket::{Build, Config, Rocket};
 use rocket::fs::{FileServer, relative, NamedFile};
 use rocket::fairing::AdHoc;
 use ethel::auth::{self, AuthConfig};
+use ethel::error;
 use ethel::Db;
 
 pub mod schema;
@@ -73,13 +74,12 @@ fn rocket() -> _ {
 fn mount_app(rocket: Rocket<Build>, auth: AuthConfig) -> Rocket<Build> {
     rocket
         .manage(auth)
-        .register("/", catchers![auth::unauthorized, auth::forbidden])
+        .register("/api", catchers![auth::unauthorized, auth::forbidden, error::api_default])
         .mount("/api/auth", routes![auth::login, auth::logout, auth::me])
         .mount("/", FileServer::from(relative!("/build")).rank(1))
         .mount("/static", routes![files,])
         .mount("/", routes![fallback_url,])
         .mount("/api/bottles", routes![
-            // routes::bottles::get_random_bottle,
             routes::bottles::create,
             routes::bottles::get,
             routes::bottles::delete,
@@ -242,6 +242,60 @@ mod tests {
         let client = client();
         assert_eq!(client.get("/").dispatch().status(), Status::Ok);
         assert_eq!(client.get("/bottles").dispatch().status(), Status::Ok);
+    }
+
+    /// Logged-in client. These tests only send writes the database rejects,
+    /// or target an id that doesn't exist, so nothing is modified.
+    fn logged_in() -> Client {
+        let client = client();
+        assert_eq!(login(&client, PASSWORD), Status::NoContent);
+        client
+    }
+
+    const MISSING_ID: i16 = i16::MAX;
+
+    fn json_error(res: rocket::local::blocking::LocalResponse<'_>) -> (Status, String) {
+        let status = res.status();
+        assert_eq!(res.content_type(), Some(ContentType::JSON), "{status} should have a JSON body");
+        let body: ethel::ApiError = res.into_json().expect("ApiError body");
+        (status, body.details)
+    }
+
+    #[test]
+    fn create_with_missing_reference_is_422_not_200() {
+        let client = logged_in();
+        let body = format!(
+            r#"{{"name":"x","category_id":{MISSING_ID},"sub_category_ids":[],"storage_id":{MISSING_ID}}}"#
+        );
+        let res = client.post("/api/bottles/").header(ContentType::JSON).body(body).dispatch();
+        let (status, details) = json_error(res);
+        assert_eq!(status, Status::UnprocessableEntity);
+        assert!(details.ends_with("does not refer to an existing record"), "{details}");
+        assert!(!details.contains("constraint"), "raw database error leaked: {details}");
+    }
+
+    #[test]
+    fn update_and_delete_of_missing_row_are_404() {
+        let client = logged_in();
+        let res = client
+            .put(format!("/api/categories/{MISSING_ID}"))
+            .header(ContentType::JSON)
+            .body(r#"{"name":"x"}"#)
+            .dispatch();
+        assert_eq!(json_error(res).0, Status::NotFound);
+
+        let res = client.delete(format!("/api/categories/{MISSING_ID}")).dispatch();
+        assert_eq!(json_error(res).0, Status::NotFound);
+    }
+
+    #[test]
+    fn malformed_body_and_unknown_routes_get_json_errors() {
+        let client = logged_in();
+        let res = client.post("/api/categories/").header(ContentType::JSON).body(r#"{"nope":1}"#).dispatch();
+        assert_eq!(json_error(res).0, Status::UnprocessableEntity);
+
+        let res = client.get("/api/does-not-exist").dispatch();
+        assert_eq!(json_error(res).0, Status::NotFound);
     }
 
     #[test]
