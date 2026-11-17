@@ -3,10 +3,11 @@ use rocket::{serde::json::Json, response::status};
 use crate::models::{NewStorage, Storage};
 use crate::schema::storage;
 use crate::Db;
-use ethel::ApiError;
+use ethel::{ApiError, SameOrigin};
 
-#[post("/", data = "<storage>")]
+#[post("/", format = "json", data = "<storage>")]
 pub async fn create(
+    _csrf: SameOrigin,
     connection: Db,
     storage: Json<NewStorage>
 ) -> Result<status::Created<Json<Storage> > , Json<ApiError>> {
@@ -36,6 +37,7 @@ pub async fn get(connection: Db) -> Json<Vec<Storage>>  {
 
 #[delete("/<id>")]
 pub async fn delete(
+    _csrf: SameOrigin,
     connection: Db,
     id: i16
 ) -> Result<status::NoContent, status::NotFound<Json<ApiError>>> { 
@@ -60,8 +62,9 @@ pub async fn delete(
         })
 }
 
-#[put("/<id>", data = "<storage>")]
+#[put("/<id>", format = "json", data = "<storage>")]
 pub async fn update(
+    _csrf: SameOrigin,
     connection: Db,
     id: i16,
     storage: Json<NewStorage>,
