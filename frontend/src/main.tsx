@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import theme from '@/theme'
 import App from './App'
 import { ApiError, setUnauthorizedHandler } from '@/api/client'
-import { AUTH_QUERY_KEY } from '@/hooks/useAuth'
+import { AUTH_QUERY_KEY, markLoggedOut } from '@/hooks/useAuth'
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,8 +21,7 @@ const queryClient = new QueryClient({
 // Session expired or cookie removed mid-use: drop cached data and show login.
 setUnauthorizedHandler(() => {
   if (queryClient.getQueryData(AUTH_QUERY_KEY) === true) {
-    queryClient.clear()
-    queryClient.setQueryData(AUTH_QUERY_KEY, false)
+    markLoggedOut(queryClient)
   }
 })
 
