@@ -31,8 +31,14 @@ This project was written in a Unix environment, specifically on a MacOS (most re
 - The plain `docker compose up` does not publish Postgres to the host at all; only `docker-compose.dev.yml` does, and only on `127.0.0.1`.
 - Changing the password: `POSTGRES_PASSWORD` only takes effect when the `db-data` volume is first created. For an existing volume, run `docker compose exec db psql -U ethel -d etheldb -c "ALTER USER ethel PASSWORD 'new-password';"` and then update `.env`.
 
+### Login
+- The web app and API require signing in with the shared password in `ETHEL_PASSWORD` (at least 12 characters). The app refuses to start without it.
+- Sessions are an encrypted, `HttpOnly`, `SameSite=Strict` cookie that lasts 30 days. Release builds (including Docker) also require `ROCKET_SECRET_KEY` (`openssl rand -base64 32`); if it's unset, debug builds generate a temporary one and `cargo run` logs you out on every restart. Changing the key logs everyone out.
+- Set `ETHEL_SECURE_COOKIE=true` when serving over HTTPS. Over plain HTTP the password and cookie travel unencrypted, so put a TLS reverse proxy in front for anything beyond your home network.
+- `cargo test` needs the dev database running (step 4 above). The tests only read from it.
+
 ### Running with Docker
-1. `cp .env.example .env` and set a password
+1. `cp .env.example .env` and set `POSTGRES_PASSWORD`, `ETHEL_PASSWORD` and `ROCKET_SECRET_KEY`
 2. `docker compose up --build -d`
 3. The app is on `http://localhost:8000` and applies database migrations at startup
 
@@ -43,7 +49,7 @@ This project was written in a Unix environment, specifically on a MacOS (most re
 
 ### Running the Project
 1. In the root directory, use `cargo run`
-2. The project should now be running on `localhost` serving the static frontend build with data from the API (by deafult, the UI will show mock data if there are no records)
+2. The project should now be running on `localhost` serving the static frontend build with data from the API and asks for the `ETHEL_PASSWORD` login
 
 ### Troubleshooting
 

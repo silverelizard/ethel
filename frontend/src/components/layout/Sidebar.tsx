@@ -1,5 +1,6 @@
-import { Box, VStack, Text, Link as ChakraLink } from '@chakra-ui/react'
+import { Box, Button, VStack, Text, Link as ChakraLink } from '@chakra-ui/react'
 import { Link, useLocation } from 'react-router-dom'
+import { useLogout } from '@/hooks/useAuth'
 
 const NAV_ITEMS = [
   { label: 'Bottles', path: '/bottles' },
@@ -14,6 +15,7 @@ interface SidebarProps {
 
 export default function Sidebar({ onClose }: SidebarProps) {
   const location = useLocation()
+  const logout = useLogout()
 
   return (
     <Box>
@@ -42,6 +44,16 @@ export default function Sidebar({ onClose }: SidebarProps) {
           )
         })}
       </VStack>
+      <Button
+        mt={8}
+        mx={2}
+        size="sm"
+        variant="outline"
+        isLoading={logout.isPending}
+        onClick={() => logout.mutate()}
+      >
+        Log out
+      </Button>
     </Box>
   )
 }

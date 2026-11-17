@@ -1,3 +1,8 @@
+#[macro_use]
+extern crate rocket;
+
+pub mod auth;
+
 use rocket::http::Status;
 use rocket::request::{FromRequest, Outcome, Request};
 use rocket::serde::{Deserialize, Serialize};

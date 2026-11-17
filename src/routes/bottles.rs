@@ -3,7 +3,7 @@ use rocket::{serde::json::Json, response::status};
 use crate::models::{NewBottle, Bottle};
 use crate::schema::bottles;
 use crate::Db;
-use ethel::{ApiError, SameOrigin};
+use ethel::{auth::Authenticated, ApiError, SameOrigin};
 
 // #[get("/random")]
 // pub fn get_random_bottle() -> Json<Bottle>  {
@@ -21,6 +21,7 @@ use ethel::{ApiError, SameOrigin};
 #[post("/", format = "json", data = "<bottle>")]
 pub async fn create(
     _csrf: SameOrigin,
+    _auth: Authenticated,
     connection: Db,
     bottle: Json<NewBottle>
 ) -> Result<status::Created<Json<Bottle>> , Json<ApiError>> {
@@ -40,7 +41,7 @@ pub async fn create(
 }
 
 #[get("/")]
-pub async fn get(connection: Db) -> Json<Vec<Bottle>>  {
+pub async fn get(_auth: Authenticated, connection: Db) -> Json<Vec<Bottle>>  {
     connection
         .run(|c| bottles::table.load(c))
         .await
@@ -51,6 +52,7 @@ pub async fn get(connection: Db) -> Json<Vec<Bottle>>  {
 #[delete("/<id>")]
 pub async fn delete(
     _csrf: SameOrigin,
+    _auth: Authenticated,
     connection: Db,
     id: i16
 ) -> Result<status::NoContent, status::NotFound<Json<ApiError>>> { 
@@ -77,6 +79,7 @@ pub async fn delete(
 #[put("/<id>", format = "json", data = "<bottle>")]
 pub async fn update(
     _csrf: SameOrigin,
+    _auth: Authenticated,
     connection: Db,
     id: i16,
     bottle: Json<NewBottle>

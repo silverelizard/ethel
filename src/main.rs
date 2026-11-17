@@ -9,6 +9,7 @@ use diesel_migrations::{embed_migrations, EmbeddedMigrations, MigrationHarness};
 use rocket::{Build, Config, Rocket};
 use rocket::fs::{FileServer, relative, NamedFile};
 use rocket::fairing::AdHoc;
+use ethel::auth::{self, AuthConfig};
 use ethel::Db;
 
 pub mod schema;
@@ -58,11 +59,22 @@ fn rocket() -> _ {
         figment = figment.merge(("databases.my_db.url", url));
     }
 
-    rocket::custom(figment)
+    let auth = AuthConfig::from_env().unwrap_or_else(|e| panic!("{e}"));
+
+    let rocket = rocket::custom(figment)
         .attach(AdHoc::config::<Config>())
         .attach(Db::fairing())
-        .attach(AdHoc::on_ignite("Run migrations", run_migrations))
-        // .mount("/", routes![routes::index])
+        .attach(AdHoc::on_ignite("Run migrations", run_migrations));
+    mount_app(rocket, auth)
+}
+
+/// Routes, catchers and managed state, without the database fairings, so
+/// tests can exercise the auth layer without a running Postgres.
+fn mount_app(rocket: Rocket<Build>, auth: AuthConfig) -> Rocket<Build> {
+    rocket
+        .manage(auth)
+        .register("/", catchers![auth::unauthorized, auth::forbidden])
+        .mount("/api/auth", routes![auth::login, auth::logout, auth::me])
         .mount("/", FileServer::from(relative!("/build")).rank(1))
         .mount("/static", routes![files,])
         .mount("/", routes![fallback_url,])
@@ -91,4 +103,150 @@ fn rocket() -> _ {
             routes::sub_categories::delete,
             routes::sub_categories::update
         ])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rocket::http::{ContentType, Cookie, Method, Status};
+    use rocket::local::blocking::Client;
+
+    const PASSWORD: &str = "correct horse battery";
+
+    /// Needs the dev database running (Rocket refuses to start routes that use
+    /// `Db` without its pool). Tests never write to it: unauthenticated
+    /// requests stop at the guard, and authenticated checks only use GET.
+    fn client() -> Client {
+        dotenvy::dotenv().ok();
+        let url = std::env::var("DATABASE_URL")
+            .expect("DATABASE_URL must point at the dev database to run these tests");
+        // Small pool: tests run in parallel and each opens its own.
+        let figment = Config::figment()
+            .merge(("databases.my_db.url", url))
+            .merge(("databases.my_db.pool_size", 2));
+        let auth = AuthConfig::new(PASSWORD, false).unwrap();
+        let rocket = rocket::custom(figment).attach(Db::fairing());
+        Client::tracked(mount_app(rocket, auth))
+            .expect("failed to start; is the dev database up? (see README)")
+    }
+
+    fn login(client: &Client, password: &str) -> Status {
+        client
+            .post("/api/auth/login")
+            .header(ContentType::JSON)
+            .body(format!(r#"{{"password":"{password}"}}"#))
+            .dispatch()
+            .status()
+    }
+
+    /// Every mounted /api route except login/logout, with `<id>` filled in.
+    fn protected_routes(client: &Client) -> Vec<(Method, String)> {
+        let routes: Vec<_> = client
+            .rocket()
+            .routes()
+            .map(|r| (r.method, r.uri.to_string()))
+            .filter(|(_, uri)| uri.starts_with("/api/"))
+            .filter(|(_, uri)| uri != "/api/auth/login" && uri != "/api/auth/logout")
+            .map(|(m, uri)| (m, uri.replace("<id>", "1")))
+            .collect();
+        assert!(routes.len() >= 17, "expected 16 CRUD routes + /me, got {routes:?}");
+        routes
+    }
+
+    fn status_of(client: &Client, method: Method, uri: &str) -> Status {
+        client
+            .req(method, uri.to_string())
+            .header(ContentType::JSON)
+            .body("{}")
+            .dispatch()
+            .status()
+    }
+
+    #[test]
+    fn every_api_route_requires_auth() {
+        let client = client();
+        for (method, uri) in protected_routes(&client) {
+            assert_eq!(status_of(&client, method, &uri), Status::Unauthorized, "{method} {uri}");
+        }
+    }
+
+    #[test]
+    fn unauthorized_response_is_json() {
+        let client = client();
+        let res = client.get("/api/bottles/").dispatch();
+        assert_eq!(res.status(), Status::Unauthorized);
+        assert_eq!(res.content_type(), Some(ContentType::JSON));
+    }
+
+    #[test]
+    fn wrong_password_is_rejected() {
+        let client = client();
+        assert_eq!(login(&client, "not the password"), Status::Unauthorized);
+        assert!(client.cookies().get_private(auth::SESSION_COOKIE).is_none());
+    }
+
+    #[test]
+    fn login_sets_a_hardened_cookie_and_unlocks_the_api() {
+        let client = client();
+        let res = client
+            .post("/api/auth/login")
+            .header(ContentType::JSON)
+            .body(format!(r#"{{"password":"{PASSWORD}"}}"#))
+            .dispatch();
+        assert_eq!(res.status(), Status::NoContent);
+        let set_cookie = res.headers().get_one("Set-Cookie").unwrap().to_string();
+        assert!(set_cookie.contains("HttpOnly"), "{set_cookie}");
+        assert!(set_cookie.contains("SameSite=Strict"), "{set_cookie}");
+
+        assert_eq!(client.get("/api/auth/me").dispatch().status(), Status::NoContent);
+        for (method, uri) in protected_routes(&client) {
+            if method == Method::Get {
+                let status = status_of(&client, method, &uri);
+                assert_eq!(status.class(), rocket::http::StatusClass::Success, "{method} {uri}: {status}");
+            }
+        }
+    }
+
+    #[test]
+    fn logout_ends_the_session() {
+        let client = client();
+        assert_eq!(login(&client, PASSWORD), Status::NoContent);
+        assert_eq!(client.post("/api/auth/logout").dispatch().status(), Status::NoContent);
+        assert_eq!(client.get("/api/auth/me").dispatch().status(), Status::Unauthorized);
+    }
+
+    #[test]
+    fn forged_and_expired_cookies_are_rejected() {
+        let client = client();
+        // Plaintext (not encrypted with secret_key) cookie value.
+        let forged = client
+            .get("/api/auth/me")
+            .cookie(Cookie::new(auth::SESSION_COOKIE, "9999999999"))
+            .dispatch();
+        assert_eq!(forged.status(), Status::Unauthorized);
+
+        let thirty_one_days_ago = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs()
+            - 31 * 24 * 60 * 60;
+        let expired = client
+            .get("/api/auth/me")
+            .private_cookie(Cookie::new(auth::SESSION_COOKIE, thirty_one_days_ago.to_string()))
+            .dispatch();
+        assert_eq!(expired.status(), Status::Unauthorized);
+    }
+
+    #[test]
+    fn frontend_stays_public() {
+        let client = client();
+        assert_eq!(client.get("/").dispatch().status(), Status::Ok);
+        assert_eq!(client.get("/bottles").dispatch().status(), Status::Ok);
+    }
+
+    #[test]
+    fn weak_or_missing_password_refuses_to_start() {
+        assert!(AuthConfig::new("", false).is_err());
+        assert!(AuthConfig::new("short", false).is_err());
+    }
 }

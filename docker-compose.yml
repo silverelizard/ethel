@@ -24,6 +24,9 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-ethel}:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env (see .env.example)}@db:5432/${POSTGRES_DB:-etheldb}
+      ETHEL_PASSWORD: ${ETHEL_PASSWORD:?Set ETHEL_PASSWORD in .env (see .env.example)}
+      ROCKET_SECRET_KEY: ${ROCKET_SECRET_KEY:?Set ROCKET_SECRET_KEY in .env (see .env.example)}
+      ETHEL_SECURE_COOKIE: ${ETHEL_SECURE_COOKIE:-false}
     ports:
       - "8000:8000"
 
