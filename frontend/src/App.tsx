@@ -4,8 +4,18 @@ import BottlesPage from '@/components/bottles/BottlesPage'
 import CategoriesPage from '@/components/categories/CategoriesPage'
 import SubCategoriesPage from '@/components/subCategories/SubCategoriesPage'
 import StoragePage from '@/components/storage/StoragePage'
+import LoginPage from '@/components/auth/LoginPage'
+import LoadingSpinner from '@/components/shared/LoadingSpinner'
+import ErrorAlert from '@/components/shared/ErrorAlert'
+import { useSession } from '@/hooks/useAuth'
 
 function App() {
+  const { isAuthenticated, isLoading, error } = useSession()
+
+  if (isLoading) return <LoadingSpinner />
+  if (error) return <ErrorAlert message="Could not reach the server." />
+  if (!isAuthenticated) return <LoginPage />
+
   return (
     <BrowserRouter>
       <AppShell>
