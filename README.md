@@ -44,3 +44,5 @@ If you run into an error like this when trying to build the project:
 ```
 
 This is the flavor of error solved by step 3 in "Setting up Dev Environment". Apple may have decided to unpackage/unlink additional libraries. Try installing those libraries from homebrew (like we did with `libpq`) and then try building again.
+
+After installing additional libraries, make sure to run `cargo clean` before building again.

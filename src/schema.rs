@@ -38,9 +38,4 @@ diesel::joinable!(bottles -> categories (category_id));
 diesel::joinable!(bottles -> storage (storage_id));
 diesel::joinable!(sub_categories -> categories (category_id));
 
-diesel::allow_tables_to_appear_in_same_query!(
-    bottles,
-    categories,
-    storage,
-    sub_categories,
-);
+diesel::allow_tables_to_appear_in_same_query!(bottles, categories, storage, sub_categories,);
