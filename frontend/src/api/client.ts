@@ -10,7 +10,7 @@ export class ApiError extends Error {
   }
 }
 
-const BASE_URL = ''
+const BASE_URL = '/api'
 
 export async function apiFetch<T>(
   path: string,
