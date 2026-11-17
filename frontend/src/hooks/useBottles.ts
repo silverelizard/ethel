@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { bottlesApi } from '@/api/bottles'
-import type { BottlePayload } from '@/types/api'
+import type { BottlePayload, RandomBottleFilters } from '@/types/api'
 
 const QUERY_KEY = ['bottles']
 
@@ -33,5 +33,12 @@ export function useDeleteBottle() {
   return useMutation({
     mutationFn: (id: number) => bottlesApi.delete(id),
     onSuccess: () => qc.invalidateQueries({ queryKey: QUERY_KEY }),
+  })
+}
+
+/** Picks a random bottle on demand (a mutation, since each pick is a new result). */
+export function useRandomBottle() {
+  return useMutation({
+    mutationFn: (filters: RandomBottleFilters) => bottlesApi.random(filters),
   })
 }

@@ -1,8 +1,16 @@
 import { apiFetch } from './client'
-import type { Bottle, BottlePayload } from '@/types/api'
+import type { Bottle, BottlePayload, RandomBottleFilters } from '@/types/api'
 
 const realBottlesApi = {
   list: () => apiFetch<Bottle[]>('/bottles/'),
+
+  random: (filters: RandomBottleFilters = {}) => {
+    const params = new URLSearchParams()
+    if (filters.categoryId != null) params.set('category_id', String(filters.categoryId))
+    if (filters.subCategoryId != null) params.set('sub_category_id', String(filters.subCategoryId))
+    const query = params.toString()
+    return apiFetch<Bottle>(`/bottles/random${query ? `?${query}` : ''}`)
+  },
 
   create: (payload: BottlePayload) =>
     apiFetch<Bottle>('/bottles/', {

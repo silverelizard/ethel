@@ -80,6 +80,7 @@ fn mount_app(rocket: Rocket<Build>, auth: AuthConfig) -> Rocket<Build> {
         .mount("/static", routes![files,])
         .mount("/", routes![fallback_url,])
         .mount("/api/bottles", routes![
+            routes::bottles::random,
             routes::bottles::create,
             routes::bottles::get,
             routes::bottles::delete,
@@ -147,9 +148,12 @@ mod tests {
             .map(|r| (r.method, r.uri.to_string()))
             .filter(|(_, uri)| uri.starts_with("/api/"))
             .filter(|(_, uri)| uri != "/api/auth/login" && uri != "/api/auth/logout")
-            .map(|(m, uri)| (m, uri.replace("<id>", "1")))
+            .map(|(m, uri)| {
+                let path = uri.split('?').next().unwrap_or(&uri).replace("<id>", "1");
+                (m, path)
+            })
             .collect();
-        assert!(routes.len() >= 17, "expected 16 CRUD routes + /me, got {routes:?}");
+        assert!(routes.len() >= 18, "expected 16 CRUD routes + /me + /random, got {routes:?}");
         routes
     }
 
@@ -296,6 +300,34 @@ mod tests {
 
         let res = client.get("/api/does-not-exist").dispatch();
         assert_eq!(json_error(res).0, Status::NotFound);
+    }
+
+    #[test]
+    fn random_bottle_with_no_matches_is_404() {
+        let client = logged_in();
+        for uri in [
+            format!("/api/bottles/random?category_id={MISSING_ID}"),
+            format!("/api/bottles/random?sub_category_id={MISSING_ID}"),
+            format!("/api/bottles/random?category_id={MISSING_ID}&sub_category_id={MISSING_ID}"),
+        ] {
+            let (status, details) = json_error(client.get(&uri).dispatch());
+            assert_eq!(status, Status::NotFound, "{uri}");
+            assert_eq!(details, "No bottles match those filters", "{uri}");
+        }
+    }
+
+    #[test]
+    fn random_bottle_rejects_malformed_filters() {
+        let client = logged_in();
+        for (uri, field) in [
+            ("/api/bottles/random?category_id=abc", "category_id"),
+            ("/api/bottles/random?sub_category_id=1.5", "sub_category_id"),
+            ("/api/bottles/random?category_id=99999", "category_id"),
+        ] {
+            let (status, details) = json_error(client.get(uri).dispatch());
+            assert_eq!(status, Status::UnprocessableEntity, "{uri}");
+            assert_eq!(details, format!("{field} must be a whole number"), "{uri}");
+        }
     }
 
     #[test]
