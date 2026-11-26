@@ -32,7 +32,8 @@ This project was written in a Unix environment, specifically on a MacOS (most re
 - Changing the password: `POSTGRES_PASSWORD` only takes effect when the `db-data` volume is first created. For an existing volume, run `docker compose exec db psql -U ethel -d etheldb -c "ALTER USER ethel PASSWORD 'new-password';"` and then update `.env`.
 
 ### Login
-- The web app and API require signing in with the shared password in `ETHEL_PASSWORD` (at least 12 characters). The app refuses to start without it.
+- Visitors get a public, read-only bottle list at `/`: they can browse, search, filter and use the random bottle picker, but not edit anything. The read-only API routes (`GET /api/bottles/`, `/api/bottles/random`, `/api/categories/`, `/api/sub_categories/`, `/api/storage/`) are public, including storage room and shelf.
+- Adding, editing and deleting requires signing in (the "Sign in" link, or `/login`) with the shared password in `ETHEL_PASSWORD` (at least 12 characters). The app refuses to start without it.
 - Sessions are an encrypted, `HttpOnly`, `SameSite=Strict` cookie that lasts 30 days. Release builds (including Docker) also require `ROCKET_SECRET_KEY` (`openssl rand -base64 32`); if it's unset, debug builds generate a temporary one and `cargo run` logs you out on every restart. Changing the key logs everyone out.
 - Set `ETHEL_SECURE_COOKIE=true` when serving over HTTPS. Over plain HTTP the password and cookie travel unencrypted, so put a TLS reverse proxy in front for anything beyond your home network.
 - `cargo test` needs the dev database running (step 4 above). The tests only read from it.

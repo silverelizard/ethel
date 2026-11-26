@@ -1,32 +1,20 @@
-import { useMemo, useState } from 'react'
-import { Button, HStack, Text, useDisclosure, useToast } from '@chakra-ui/react'
-import { AddIcon, RepeatIcon } from '@chakra-ui/icons'
+import { useState } from 'react'
+import { Button, HStack, useDisclosure, useToast } from '@chakra-ui/react'
+import { AddIcon } from '@chakra-ui/icons'
 import PageHeader from '@/components/layout/PageHeader'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import ErrorAlert from '@/components/shared/ErrorAlert'
-import EmptyState from '@/components/shared/EmptyState'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
-import BottleTable from './BottleTable'
 import BottleFormModal from './BottleFormModal'
-import BottleFilters from './BottleFilters'
-import RandomBottleModal from './RandomBottleModal'
-import { EMPTY_FILTERS, filterBottles, type BottleFilterState } from './filterBottles'
-import {
-  useBottles,
-  useCreateBottle,
-  useUpdateBottle,
-  useDeleteBottle,
-} from '@/hooks/useBottles'
-import { useCategories } from '@/hooks/useCategories'
-import { useSubCategories } from '@/hooks/useSubCategories'
-import { useStorage } from '@/hooks/useStorage'
+import BottleBrowser from './BottleBrowser'
+import RandomBottleButton from './RandomBottleButton'
+import { useCreateBottle, useUpdateBottle, useDeleteBottle } from '@/hooks/useBottles'
+import { useBottleCatalog } from '@/hooks/useBottleCatalog'
 import type { Bottle, BottlePayload } from '@/types/api'
 
+/** Admin bottles page: browsing plus add, edit and delete. */
 export default function BottlesPage() {
-  const { data: bottles, isLoading: bLoading, error: bError } = useBottles()
-  const { data: categories, isLoading: cLoading, error: cError } = useCategories()
-  const { data: subCategories, isLoading: scLoading, error: scError } = useSubCategories()
-  const { data: storageList, isLoading: sLoading, error: sError } = useStorage()
+  const catalog = useBottleCatalog()
 
   const createMutation = useCreateBottle()
   const updateMutation = useUpdateBottle()
@@ -38,38 +26,6 @@ export default function BottlesPage() {
 
   const [editing, setEditing] = useState<Bottle | null>(null)
   const [deleting, setDeleting] = useState<Bottle | null>(null)
-  const [filters, setFilters] = useState<BottleFilterState>(EMPTY_FILTERS)
-
-  const randomModal = useDisclosure()
-  // New key per open, so the modal starts from the current filters.
-  const [randomKey, setRandomKey] = useState(0)
-  const openRandom = () => {
-    setRandomKey((k) => k + 1)
-    randomModal.onOpen()
-  }
-
-  const filteredBottles = useMemo(
-    () => filterBottles(bottles ?? [], filters),
-    [bottles, filters],
-  )
-
-  const categoryMap = useMemo(() => {
-    const map = new Map<number, string>()
-    categories?.forEach((c) => map.set(c.id, c.name))
-    return map
-  }, [categories])
-
-  const subCategoryMap = useMemo(() => {
-    const map = new Map<number, string>()
-    subCategories?.forEach((sc) => map.set(sc.id, sc.name))
-    return map
-  }, [subCategories])
-
-  const storageMap = useMemo(() => {
-    const map = new Map<number, string>()
-    storageList?.forEach((s) => map.set(s.id, s.name))
-    return map
-  }, [storageList])
 
   const handleCreate = () => {
     setEditing(null)
@@ -106,11 +62,8 @@ export default function BottlesPage() {
       })
   }
 
-  const isLoading = bLoading || cLoading || scLoading || sLoading
-  const error = bError || cError || scError || sError
-
-  if (isLoading) return <LoadingSpinner />
-  if (error) return <ErrorAlert message={(error as Error).message} />
+  if (catalog.isLoading) return <LoadingSpinner />
+  if (catalog.error) return <ErrorAlert message={(catalog.error as Error).message} />
 
   return (
     <>
@@ -118,15 +71,7 @@ export default function BottlesPage() {
         title="Bottles"
         action={
           <HStack spacing={2}>
-            <Button
-              leftIcon={<RepeatIcon />}
-              variant="outline"
-              colorScheme="brand"
-              onClick={openRandom}
-              isDisabled={!bottles || bottles.length === 0}
-            >
-              Random bottle
-            </Button>
+            <RandomBottleButton catalog={catalog} />
             <Button leftIcon={<AddIcon />} colorScheme="brand" onClick={handleCreate}>
               Add Bottle
             </Button>
@@ -134,44 +79,11 @@ export default function BottlesPage() {
         }
       />
 
-      {bottles && bottles.length > 0 ? (
-        <>
-          <BottleFilters
-            value={filters}
-            onChange={setFilters}
-            categories={categories ?? []}
-            subCategories={subCategories ?? []}
-            storageList={storageList ?? []}
-          />
-          <Text fontSize="sm" color="gray.600" mb={2} aria-live="polite">
-            Showing {filteredBottles.length} of {bottles.length} bottles
-          </Text>
-          {filteredBottles.length > 0 ? (
-            <BottleTable
-              bottles={filteredBottles}
-              categoryMap={categoryMap}
-              subCategoryMap={subCategoryMap}
-              storageMap={storageMap}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          ) : (
-            <EmptyState message="No bottles match these filters." />
-          )}
-        </>
-      ) : (
-        <EmptyState message="No bottles yet. Add one to get started." />
-      )}
-
-      <RandomBottleModal
-        key={randomKey}
-        isOpen={randomModal.isOpen}
-        onClose={randomModal.onClose}
-        categories={categories ?? []}
-        subCategories={subCategories ?? []}
-        storageList={storageList ?? []}
-        initialCategoryId={filters.categoryId}
-        initialSubCategoryId={filters.subCategoryId}
+      <BottleBrowser
+        catalog={catalog}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        emptyMessage="No bottles yet. Add one to get started."
       />
 
       <BottleFormModal
@@ -180,9 +92,9 @@ export default function BottlesPage() {
         onSubmit={handleFormSubmit}
         isLoading={createMutation.isPending || updateMutation.isPending}
         bottle={editing}
-        categories={categories ?? []}
-        subCategories={subCategories ?? []}
-        storageList={storageList ?? []}
+        categories={catalog.categories}
+        subCategories={catalog.subCategories}
+        storageList={catalog.storageList}
       />
 
       <ConfirmDialog

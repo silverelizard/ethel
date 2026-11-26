@@ -7,8 +7,10 @@ import {
   FormLabel,
   Heading,
   Input,
+  Link as ChakraLink,
   VStack,
 } from '@chakra-ui/react'
+import { Link } from 'react-router-dom'
 import ErrorAlert from '@/components/shared/ErrorAlert'
 import { ApiError } from '@/api/client'
 import { useLogin } from '@/hooks/useAuth'
@@ -48,6 +50,9 @@ export default function LoginPage() {
           <Button type="submit" colorScheme="brand" isLoading={login.isPending}>
             Sign in
           </Button>
+          <ChakraLink as={Link} to="/" textAlign="center" fontSize="sm" color="gray.600">
+            Back to the bottle list
+          </ChakraLink>
         </VStack>
       </Box>
     </Flex>
