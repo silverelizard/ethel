@@ -34,9 +34,9 @@ export default function Sidebar({ onClose }: SidebarProps) {
               py={2}
               borderRadius="md"
               fontWeight={isActive ? 'semibold' : 'normal'}
-              bg={isActive ? 'brand.50' : 'transparent'}
-              color={isActive ? 'brand.700' : 'gray.700'}
-              _hover={{ bg: isActive ? 'brand.50' : 'gray.100', textDecoration: 'none' }}
+              bg={isActive ? 'accent.subtle' : 'transparent'}
+              color={isActive ? 'accent.fg' : 'text.subtle'}
+              _hover={{ bg: isActive ? 'accent.subtle' : 'bg.subtle', textDecoration: 'none' }}
               onClick={onClose}
             >
               {item.label}

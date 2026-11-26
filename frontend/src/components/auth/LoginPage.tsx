@@ -12,6 +12,7 @@ import {
 } from '@chakra-ui/react'
 import { Link } from 'react-router-dom'
 import ErrorAlert from '@/components/shared/ErrorAlert'
+import ColorModeToggle from '@/components/shared/ColorModeToggle'
 import { ApiError } from '@/api/client'
 import { useLogin } from '@/hooks/useAuth'
 
@@ -32,8 +33,9 @@ export default function LoginPage() {
         : null
 
   return (
-    <Flex minH="100vh" align="center" justify="center" bg="gray.50" px={4}>
-      <Box as="form" onSubmit={handleSubmit} bg="white" p={8} borderRadius="lg" boxShadow="md" w="full" maxW="sm">
+    <Flex minH="100vh" align="center" justify="center" bg="bg.canvas" px={4} position="relative">
+      <ColorModeToggle size="sm" position="absolute" top={3} right={4} />
+      <Box as="form" onSubmit={handleSubmit} bg="bg.surface" p={8} borderRadius="lg" boxShadow="md" w="full" maxW="sm">
         <VStack spacing={5} align="stretch">
           <Heading size="lg">Ethel</Heading>
           {errorMessage && <ErrorAlert message={errorMessage} />}
@@ -50,7 +52,7 @@ export default function LoginPage() {
           <Button type="submit" colorScheme="brand" isLoading={login.isPending}>
             Sign in
           </Button>
-          <ChakraLink as={Link} to="/" textAlign="center" fontSize="sm" color="gray.600">
+          <ChakraLink as={Link} to="/" textAlign="center" fontSize="sm" color="text.subtle">
             Back to the bottle list
           </ChakraLink>
         </VStack>

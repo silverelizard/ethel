@@ -10,7 +10,7 @@ export default function EmptyState({ message }: EmptyStateProps) {
       justify="center"
       align="center"
       py={20}
-      color="gray.500"
+      color="text.muted"
       borderWidth="1px"
       borderRadius="md"
       borderStyle="dashed"
