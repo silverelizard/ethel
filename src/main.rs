@@ -292,6 +292,58 @@ mod tests {
         assert_eq!(json_error(res).0, Status::NotFound);
     }
 
+    /// Fetches a JSON list from the API; used to find an existing row to collide with.
+    fn list(client: &Client, uri: &str) -> Vec<rocket::serde::json::Value> {
+        client.get(uri).dispatch().into_json().expect("JSON list")
+    }
+
+    fn post_json(client: &Client, uri: &str, body: String) -> (Status, String) {
+        json_error(client.post(uri.to_string()).header(ContentType::JSON).body(body).dispatch())
+    }
+
+    /// Changes case and adds whitespace, so the test also covers normalization.
+    fn variant(name: &str) -> String {
+        format!("  {}  ", name.to_uppercase())
+    }
+
+    #[test]
+    fn duplicate_category_name_is_409() {
+        let client = logged_in();
+        let Some(existing) = list(&client, "/api/categories/").into_iter().next() else {
+            eprintln!("skipped: no categories in the dev database");
+            return;
+        };
+        let name = variant(existing["name"].as_str().unwrap());
+        let (status, details) = post_json(&client, "/api/categories/", format!(r#"{{"name":{name:?}}}"#));
+        assert_eq!(status, Status::Conflict);
+        assert_eq!(details, "A category with that name already exists");
+    }
+
+    #[test]
+    fn duplicate_sub_category_name_in_same_category_is_409() {
+        let client = logged_in();
+        let Some(existing) = list(&client, "/api/sub_categories/").into_iter().next() else {
+            eprintln!("skipped: no sub-categories in the dev database");
+            return;
+        };
+        let name = variant(existing["name"].as_str().unwrap());
+        let body = format!(r#"{{"name":{name:?},"category_id":{}}}"#, existing["category_id"]);
+        let (status, details) = post_json(&client, "/api/sub_categories/", body);
+        assert_eq!(status, Status::Conflict);
+        assert_eq!(details, "That category already has a sub-category with that name");
+    }
+
+    #[test]
+    fn blank_names_are_rejected() {
+        let client = logged_in();
+        let (status, details) = post_json(&client, "/api/categories/", r#"{"name":"   "}"#.into());
+        assert_eq!((status, details.as_str()), (Status::UnprocessableEntity, "name is required"));
+
+        let (status, _) =
+            post_json(&client, "/api/sub_categories/", r#"{"name":"","category_id":1}"#.into());
+        assert_eq!(status, Status::UnprocessableEntity);
+    }
+
     #[test]
     fn malformed_body_and_unknown_routes_get_json_errors() {
         let client = logged_in();

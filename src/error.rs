@@ -42,8 +42,15 @@ impl HttpError {
                 let field = info.column_name().unwrap_or("a required field");
                 Self::new(Status::UnprocessableEntity, format!("{field} is required"))
             }
-            DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, _) => {
-                Self::new(Status::Conflict, "A record with these values already exists")
+            DieselError::DatabaseError(DatabaseErrorKind::UniqueViolation, info) => {
+                let details = match info.constraint_name() {
+                    Some("categories_name_unique") => "A category with that name already exists",
+                    Some("sub_categories_category_name_unique") => {
+                        "That category already has a sub-category with that name"
+                    }
+                    _ => "A record with these values already exists",
+                };
+                Self::new(Status::Conflict, details)
             }
             _ => Self::internal(e),
         }

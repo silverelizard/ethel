@@ -107,6 +107,7 @@ export default function SubCategoriesPage() {
         isLoading={createMutation.isPending || updateMutation.isPending}
         subCategory={editing}
         categories={categories ?? []}
+        subCategories={subCategories ?? []}
       />
 
       <ConfirmDialog

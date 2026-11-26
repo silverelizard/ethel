@@ -54,3 +54,13 @@ pub struct Db(diesel::PgConnection);
 pub struct ApiError {
     pub details: String,
 }
+
+/// Trims a user-supplied name and rejects blank ones (422), so the stored
+/// value matches what the unique indexes compare.
+pub fn normalize_name(name: &str) -> Result<String, error::HttpError> {
+    let trimmed = name.trim();
+    if trimmed.is_empty() {
+        return Err(error::HttpError::new(Status::UnprocessableEntity, "name is required"));
+    }
+    Ok(trimmed.to_string())
+}

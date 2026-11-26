@@ -94,6 +94,7 @@ export default function CategoriesPage() {
         onSubmit={handleFormSubmit}
         isLoading={createMutation.isPending || updateMutation.isPending}
         category={editing}
+        categories={categories ?? []}
       />
 
       <ConfirmDialog

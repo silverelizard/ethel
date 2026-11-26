@@ -9,12 +9,14 @@ import {
   ModalCloseButton,
   Button,
   FormControl,
+  FormErrorMessage,
   FormLabel,
   Input,
   Select,
   VStack,
 } from '@chakra-ui/react'
 import type { SubCategory, SubCategoryPayload, Category } from '@/types/api'
+import { normalizeName } from '@/utils/names'
 
 interface SubCategoryFormModalProps {
   isOpen: boolean
@@ -23,6 +25,8 @@ interface SubCategoryFormModalProps {
   isLoading: boolean
   subCategory?: SubCategory | null
   categories: Category[]
+  /** All sub-categories, to warn about duplicate names before saving. */
+  subCategories: SubCategory[]
 }
 
 export default function SubCategoryFormModal({
@@ -32,6 +36,7 @@ export default function SubCategoryFormModal({
   isLoading,
   subCategory,
   categories,
+  subCategories,
 }: SubCategoryFormModalProps) {
   const [name, setName] = useState('')
   const [categoryId, setCategoryId] = useState<string>('')
@@ -48,7 +53,18 @@ export default function SubCategoryFormModal({
     onSubmit({ name: name.trim(), category_id: Number(categoryId) })
   }
 
-  const isValid = name.trim() && categoryId
+  // Names only need to be unique within their category.
+  const isDuplicate =
+    name.trim() !== '' &&
+    categoryId !== '' &&
+    subCategories.some(
+      (sc) =>
+        sc.id !== subCategory?.id &&
+        sc.category_id === Number(categoryId) &&
+        normalizeName(sc.name) === normalizeName(name),
+    )
+
+  const isValid = name.trim() && categoryId && !isDuplicate
 
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
@@ -60,7 +76,7 @@ export default function SubCategoryFormModal({
         <ModalCloseButton />
         <ModalBody>
           <VStack spacing={4}>
-            <FormControl isRequired>
+            <FormControl isRequired isInvalid={isDuplicate}>
               <FormLabel>Name</FormLabel>
               <Input
                 value={name}
@@ -68,6 +84,7 @@ export default function SubCategoryFormModal({
                 placeholder="e.g. Bourbon"
                 autoFocus
               />
+              <FormErrorMessage>This category already has a sub-category with this name</FormErrorMessage>
             </FormControl>
             <FormControl isRequired>
               <FormLabel>Category</FormLabel>
