@@ -27,7 +27,7 @@ pub async fn create(
 }
 
 #[get("/")]
-pub async fn get(_auth: Authenticated, connection: Db) -> Result<Json<Vec<Bottle>>, HttpError> {
+pub async fn get(connection: Db) -> Result<Json<Vec<Bottle>>, HttpError> {
     connection
         .run(|c| bottles::table.load(c))
         .await
@@ -85,10 +85,10 @@ fn optional_id(name: &str, value: Result<i16, Errors<'_>>) -> Result<Option<i16>
 }
 
 /// A random bottle, optionally limited to a category and/or a sub-category.
+/// Public, like the other read-only routes.
 /// 404 when nothing matches.
 #[get("/random?<category_id>&<sub_category_id>")]
 pub async fn random(
-    _auth: Authenticated,
     connection: Db,
     category_id: Result<i16, Errors<'_>>,
     sub_category_id: Result<i16, Errors<'_>>,

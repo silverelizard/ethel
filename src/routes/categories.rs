@@ -26,7 +26,7 @@ pub async fn create(
 }
 
 #[get("/")]
-pub async fn get(_auth: Authenticated, connection: Db) -> Result<Json<Vec<Category>>, HttpError> {
+pub async fn get(connection: Db) -> Result<Json<Vec<Category>>, HttpError> {
     connection
         .run(|c| categories::table.load(c))
         .await

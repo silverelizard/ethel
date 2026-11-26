@@ -141,7 +141,7 @@ mod tests {
     }
 
     /// Every mounted /api route except login/logout, with `<id>` filled in.
-    fn protected_routes(client: &Client) -> Vec<(Method, String)> {
+    fn api_routes(client: &Client) -> Vec<(Method, String)> {
         let routes: Vec<_> = client
             .rocket()
             .routes()
@@ -157,6 +157,15 @@ mod tests {
         routes
     }
 
+    /// Reads are public (the public bottle list); everything else needs a session.
+    fn is_public(method: Method, uri: &str) -> bool {
+        method == Method::Get && uri != "/api/auth/me"
+    }
+
+    fn protected_routes(client: &Client) -> Vec<(Method, String)> {
+        api_routes(client).into_iter().filter(|(m, u)| !is_public(*m, u)).collect()
+    }
+
     fn status_of(client: &Client, method: Method, uri: &str) -> Status {
         client
             .req(method, uri.to_string())
@@ -167,17 +176,35 @@ mod tests {
     }
 
     #[test]
-    fn every_api_route_requires_auth() {
+    fn every_write_route_requires_auth() {
         let client = client();
-        for (method, uri) in protected_routes(&client) {
+        let routes = protected_routes(&client);
+        assert!(routes.len() >= 13, "expected 12 writes + /me, got {routes:?}");
+        for (method, uri) in routes {
             assert_eq!(status_of(&client, method, &uri), Status::Unauthorized, "{method} {uri}");
+        }
+    }
+
+    #[test]
+    fn read_routes_are_public() {
+        let client = client();
+        let reads: Vec<_> =
+            api_routes(&client).into_iter().filter(|(m, u)| is_public(*m, u)).collect();
+        assert_eq!(reads.len(), 5, "4 lists + /random, got {reads:?}");
+        for (method, uri) in reads {
+            let status = status_of(&client, method, &uri);
+            // /random may 404 on an empty database; anything but 401/403 counts as public.
+            assert!(
+                status != Status::Unauthorized && status != Status::Forbidden,
+                "{method} {uri} should be public, got {status}"
+            );
         }
     }
 
     #[test]
     fn unauthorized_response_is_json() {
         let client = client();
-        let res = client.get("/api/bottles/").dispatch();
+        let res = client.delete("/api/bottles/1").dispatch();
         assert_eq!(res.status(), Status::Unauthorized);
         assert_eq!(res.content_type(), Some(ContentType::JSON));
     }
