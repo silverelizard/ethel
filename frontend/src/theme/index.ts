@@ -1,11 +1,17 @@
-import { extendTheme, type ThemeConfig } from '@chakra-ui/react'
+import { createLocalStorageManager, extendTheme, type ThemeConfig } from '@chakra-ui/react'
 
-// Follow the OS light/dark setting until the visitor uses the toggle; their
-// choice is then remembered (localStorage).
+// Start from the OS light/dark setting and follow it when it changes; the
+// toggle switches modes and the choice is remembered (localStorage).
 const config: ThemeConfig = {
   initialColorMode: 'system',
-  useSystemColorMode: false,
+  useSystemColorMode: true,
 }
+
+// Own storage key, so values saved under Chakra's default key by older
+// builds (which always stored "light") are ignored. Used by both
+// ColorModeScript and ChakraProvider.
+export const COLOR_MODE_STORAGE_KEY = 'ethel-color-mode'
+export const colorModeManager = createLocalStorageManager(COLOR_MODE_STORAGE_KEY)
 
 /**
  * "Whiskey amber": amber/copper accent on warm stone neutrals.
