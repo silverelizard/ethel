@@ -49,3 +49,8 @@ export interface StoragePayload {
 export interface ApiErrorResponse {
   details: string
 }
+
+export interface RandomBottleFilters {
+  categoryId?: number | null
+  subCategoryId?: number | null
+}

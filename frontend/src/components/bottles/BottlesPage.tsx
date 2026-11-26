@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
-import { Button, useDisclosure, useToast } from '@chakra-ui/react'
-import { AddIcon } from '@chakra-ui/icons'
+import { Button, HStack, Text, useDisclosure, useToast } from '@chakra-ui/react'
+import { AddIcon, RepeatIcon } from '@chakra-ui/icons'
 import PageHeader from '@/components/layout/PageHeader'
 import LoadingSpinner from '@/components/shared/LoadingSpinner'
 import ErrorAlert from '@/components/shared/ErrorAlert'
@@ -8,6 +8,9 @@ import EmptyState from '@/components/shared/EmptyState'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import BottleTable from './BottleTable'
 import BottleFormModal from './BottleFormModal'
+import BottleFilters from './BottleFilters'
+import RandomBottleModal from './RandomBottleModal'
+import { EMPTY_FILTERS, filterBottles, type BottleFilterState } from './filterBottles'
 import {
   useBottles,
   useCreateBottle,
@@ -35,6 +38,20 @@ export default function BottlesPage() {
 
   const [editing, setEditing] = useState<Bottle | null>(null)
   const [deleting, setDeleting] = useState<Bottle | null>(null)
+  const [filters, setFilters] = useState<BottleFilterState>(EMPTY_FILTERS)
+
+  const randomModal = useDisclosure()
+  // New key per open, so the modal starts from the current filters.
+  const [randomKey, setRandomKey] = useState(0)
+  const openRandom = () => {
+    setRandomKey((k) => k + 1)
+    randomModal.onOpen()
+  }
+
+  const filteredBottles = useMemo(
+    () => filterBottles(bottles ?? [], filters),
+    [bottles, filters],
+  )
 
   const categoryMap = useMemo(() => {
     const map = new Map<number, string>()
@@ -100,24 +117,62 @@ export default function BottlesPage() {
       <PageHeader
         title="Bottles"
         action={
-          <Button leftIcon={<AddIcon />} colorScheme="brand" onClick={handleCreate}>
-            Add Bottle
-          </Button>
+          <HStack spacing={2}>
+            <Button
+              leftIcon={<RepeatIcon />}
+              variant="outline"
+              colorScheme="brand"
+              onClick={openRandom}
+              isDisabled={!bottles || bottles.length === 0}
+            >
+              Random bottle
+            </Button>
+            <Button leftIcon={<AddIcon />} colorScheme="brand" onClick={handleCreate}>
+              Add Bottle
+            </Button>
+          </HStack>
         }
       />
 
       {bottles && bottles.length > 0 ? (
-        <BottleTable
-          bottles={bottles}
-          categoryMap={categoryMap}
-          subCategoryMap={subCategoryMap}
-          storageMap={storageMap}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        <>
+          <BottleFilters
+            value={filters}
+            onChange={setFilters}
+            categories={categories ?? []}
+            subCategories={subCategories ?? []}
+            storageList={storageList ?? []}
+          />
+          <Text fontSize="sm" color="gray.600" mb={2} aria-live="polite">
+            Showing {filteredBottles.length} of {bottles.length} bottles
+          </Text>
+          {filteredBottles.length > 0 ? (
+            <BottleTable
+              bottles={filteredBottles}
+              categoryMap={categoryMap}
+              subCategoryMap={subCategoryMap}
+              storageMap={storageMap}
+              onEdit={handleEdit}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <EmptyState message="No bottles match these filters." />
+          )}
+        </>
       ) : (
         <EmptyState message="No bottles yet. Add one to get started." />
       )}
+
+      <RandomBottleModal
+        key={randomKey}
+        isOpen={randomModal.isOpen}
+        onClose={randomModal.onClose}
+        categories={categories ?? []}
+        subCategories={subCategories ?? []}
+        storageList={storageList ?? []}
+        initialCategoryId={filters.categoryId}
+        initialSubCategoryId={filters.subCategoryId}
+      />
 
       <BottleFormModal
         isOpen={formModal.isOpen}

@@ -1,5 +1,8 @@
 use diesel::{self, prelude::*};
-use rocket::{serde::json::Json, response::status};
+use diesel::dsl::sql;
+use diesel::sql_types::Double;
+use rocket::form::{error::ErrorKind, Errors};
+use rocket::{http::Status, serde::json::Json, response::status};
 use crate::models::{NewBottle, Bottle};
 use crate::schema::bottles;
 use crate::Db;
@@ -66,4 +69,48 @@ pub async fn update(
         .await
         .map(Json)
         .map_err(HttpError::db)
+}
+
+/// A present-but-invalid query param is a 422, not silently "any".
+fn optional_id(name: &str, value: Result<i16, Errors<'_>>) -> Result<Option<i16>, HttpError> {
+    match value {
+        Ok(id) => Ok(Some(id)),
+        // Rocket reports an absent param as a "missing" error.
+        Err(e) if e.iter().all(|e| matches!(e.kind, ErrorKind::Missing)) => Ok(None),
+        Err(_) => Err(HttpError::new(
+            Status::UnprocessableEntity,
+            format!("{name} must be a whole number"),
+        )),
+    }
+}
+
+/// A random bottle, optionally limited to a category and/or a sub-category.
+/// 404 when nothing matches.
+#[get("/random?<category_id>&<sub_category_id>")]
+pub async fn random(
+    _auth: Authenticated,
+    connection: Db,
+    category_id: Result<i16, Errors<'_>>,
+    sub_category_id: Result<i16, Errors<'_>>,
+) -> Result<Json<Bottle>, HttpError> {
+    let category_id = optional_id("category_id", category_id)?;
+    let sub_category_id = optional_id("sub_category_id", sub_category_id)?;
+
+    let bottle = connection
+        .run(move |c| {
+            let mut query = bottles::table.into_boxed();
+            if let Some(category_id) = category_id {
+                query = query.filter(bottles::category_id.eq(category_id));
+            }
+            if let Some(sub_category_id) = sub_category_id {
+                query = query.filter(bottles::sub_category_ids.contains(vec![Some(sub_category_id)]));
+            }
+            query.order(sql::<Double>("RANDOM()")).first::<Bottle>(c).optional()
+        })
+        .await
+        .map_err(HttpError::db)?;
+
+    bottle
+        .map(Json)
+        .ok_or_else(|| HttpError::new(Status::NotFound, "No bottles match those filters"))
 }
