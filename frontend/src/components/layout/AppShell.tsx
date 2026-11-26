@@ -13,6 +13,7 @@ import {
 } from '@chakra-ui/react'
 import { HamburgerIcon } from '@chakra-ui/icons'
 import Sidebar from './Sidebar'
+import ColorModeToggle from '@/components/shared/ColorModeToggle'
 
 const SIDEBAR_WIDTH = '240px'
 
@@ -28,7 +29,8 @@ export default function AppShell({ children }: { children: ReactNode }) {
           w={SIDEBAR_WIDTH}
           flexShrink={0}
           borderRight="1px"
-          borderColor="gray.200"
+          borderColor="border.subtle"
+          bg="bg.surface"
           p={4}
           pt={6}
         >
@@ -49,16 +51,21 @@ export default function AppShell({ children }: { children: ReactNode }) {
 
       {/* Main content */}
       <Box flex={1} overflow="auto">
-        {isMobile && (
-          <IconButton
-            aria-label="Open menu"
-            icon={<HamburgerIcon />}
-            variant="ghost"
-            m={2}
-            onClick={onOpen}
-          />
-        )}
-        <Box p={{ base: 4, md: 8 }} maxW="1200px" mx="auto">
+        {/* Top bar: menu button on mobile (left), color mode toggle (right). */}
+        <Flex justify="space-between" align="center" px={2} pt={2}>
+          {isMobile ? (
+            <IconButton
+              aria-label="Open menu"
+              icon={<HamburgerIcon />}
+              variant="ghost"
+              onClick={onOpen}
+            />
+          ) : (
+            <Box />
+          )}
+          <ColorModeToggle size="sm" />
+        </Flex>
+        <Box px={{ base: 4, md: 8 }} pb={{ base: 4, md: 8 }} pt={{ base: 2, md: 4 }} maxW="1200px" mx="auto">
           {children}
         </Box>
       </Box>

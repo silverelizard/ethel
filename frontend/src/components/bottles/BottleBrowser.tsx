@@ -29,7 +29,7 @@ export default function BottleBrowser({ catalog, onEdit, onDelete, emptyMessage 
             subCategories={subCategories}
             storageList={storageList}
           />
-          <Text fontSize="sm" color="gray.600" mb={2} aria-live="polite">
+          <Text fontSize="sm" color="text.muted" mb={2} aria-live="polite">
             Showing {filteredBottles.length} of {bottles.length} bottles
           </Text>
           {filteredBottles.length > 0 ? (

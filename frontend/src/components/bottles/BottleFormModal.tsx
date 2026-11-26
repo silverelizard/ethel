@@ -141,7 +141,7 @@ export default function BottleFormModal({
                   </Stack>
                 </CheckboxGroup>
               ) : (
-                <Text color="gray.500" fontSize="sm">
+                <Text color="text.muted" fontSize="sm">
                   {categoryId
                     ? 'No sub-categories for this category'
                     : 'Select a category first'}

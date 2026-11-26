@@ -116,11 +116,11 @@ export default function RandomBottleModal({
             {pick.error && <ErrorAlert message={pick.error.message} />}
 
             {bottle && (
-              <Box borderWidth="1px" borderRadius="md" p={4} bg="brand.50" aria-live="polite">
+              <Box borderWidth="1px" borderRadius="md" p={4} bg="accent.subtle" borderColor="border.subtle" aria-live="polite">
                 <Heading size="md" mb={2}>
                   {bottle.name}
                 </Heading>
-                <Text color="gray.700">{category?.name ?? 'Unknown category'}</Text>
+                <Text color="text.subtle">{category?.name ?? 'Unknown category'}</Text>
                 {bottleSubCategories.length > 0 && (
                   <Wrap spacing={1} mt={2}>
                     {bottleSubCategories.map((sc) => (
@@ -132,7 +132,7 @@ export default function RandomBottleModal({
                     ))}
                   </Wrap>
                 )}
-                <Text mt={3} fontSize="sm" color="gray.600">
+                <Text mt={3} fontSize="sm" color="text.muted">
                   {storage
                     ? `${storage.name} · ${storage.room}, shelf ${storage.shelf}`
                     : 'Unknown storage location'}

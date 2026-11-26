@@ -44,7 +44,7 @@ export default function BottleFilters({
     <Stack direction={{ base: 'column', md: 'row' }} spacing={3} mb={4}>
       <InputGroup flex={2}>
         <InputLeftElement pointerEvents="none">
-          <SearchIcon color="gray.400" />
+          <SearchIcon color="text.muted" />
         </InputLeftElement>
         <Input
           placeholder="Search bottles by name"
